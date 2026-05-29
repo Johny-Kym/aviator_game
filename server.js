@@ -16,14 +16,22 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin:
+      process.env.CLIENT_URL ||
+      "https://aviator-frontend-igpt0a05y-johnykyms-projects.vercel.app/",
     methods: ["GET", "POST"],
   },
 });
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000" }));
+app.use(
+  cors({
+    origin:
+      process.env.CLIENT_URL ||
+      "https://aviator-frontend-igpt0a05y-johnykyms-projects.vercel.app/",
+  }),
+);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "admin")));
 
