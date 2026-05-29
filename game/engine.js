@@ -149,6 +149,8 @@ class GameEngine extends EventEmitter {
     this.activeBets = {};
     this.round.crashPoint = null;
     this.round.startTime = null;
+    // 👇 emit waiting immediately so frontend resets
+    this.emit("round:waiting", { countdown: 5, roundId: this.round.id });
     setTimeout(() => this.startWaiting(), 500);
     return true;
   }
