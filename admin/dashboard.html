@@ -789,6 +789,7 @@
         });
 
         socket.on("round:waiting", (data) => {
+          closeModal(); // 👈 add this as first line
           currentState = "waiting";
           startTime = null;
           stopMultTicker();
@@ -805,6 +806,7 @@
         });
 
         socket.on("round:crash", (data) => {
+          closeModal(); // 👈 add this as first line
           currentState = "crashed";
           startTime = null;
           stopMultTicker();
@@ -814,7 +816,6 @@
           document.getElementById("live-mult").style.color = "#fc4545";
           toast(`💥 Crashed at ${data.crashPoint.toFixed(2)}x`, false);
         });
-
         socket.on("admin:crash-set", (data) => {
           if (data.success) {
             document.getElementById("pending-crash").style.display = "block";
