@@ -65,10 +65,12 @@ engine.on("round:countdown", (data) => {
 });
 
 engine.on("round:start", (data) => {
-  console.log(
-    `✈️  Round ${data.roundId} started — crash at ${engine.round.crashPoint}x`,
-  );
-  io.emit("round:start", data);
+  io.emit("round:start", {
+    startTime: data.startTime,
+    roundId: data.roundId,
+    crashPoint: engine.round.crashPoint,
+    serverTime: Date.now(), // 👈 add this
+  });
 });
 
 engine.on("round:crash", (data) => {
@@ -135,10 +137,10 @@ io.on("connection", (socket) => {
     state: engine.state,
     roundId: engine.round.id,
     startTime: engine.round.startTime,
-    crashPoint: engine.round.crashPoint,
-    history: engine.history.slice(0, 12).map((h) => h.crashPoint), // 👈 send numbers only
+    crashPoint: engine.round.crashPoint || null,
+    serverTime: Date.now(), // 👈 add this
+    history: engine.history.slice(0, 12),
   });
-
   // ── Player registers with their phone ──
   socket.on("player:register", ({ phone }) => {
     if (!phone) return;
