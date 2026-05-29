@@ -21,7 +21,7 @@ const io = new Server(server, {
       "https://aviator-frontend-igpt0a05y-johnykyms-projects.vercel.app/",
     methods: ["GET", "POST"],
   },
-    transports: ["websocket", "polling"], // 👈 add this
+  transports: ["websocket", "polling"], // 👈 add this
   allowEIO3: true,
 });
 
@@ -135,7 +135,8 @@ io.on("connection", (socket) => {
     state: engine.state,
     roundId: engine.round.id,
     startTime: engine.round.startTime,
-    history: engine.history.slice(0, 12),
+    crashPoint: engine.round.crashPoint,
+    history: engine.history.slice(0, 12).map((h) => h.crashPoint), // 👈 send numbers only
   });
 
   // ── Player registers with their phone ──
