@@ -1,5 +1,2 @@
-[deploy]
-startCommand = "node server.js"
-
-[[services]]
-protocol = "tcp"
+[start]
+cmd = "node server.js"

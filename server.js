@@ -239,9 +239,7 @@ io.on("connection", (socket) => {
 // ── Start Server ──────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`\n🚀 Aviator backend running on http://localhost:${PORT}`);
-  console.log(`📊 Admin dashboard: http://localhost:${PORT}/admin`);
-  console.log(`\nStarting game engine...\n`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
   engine.startWaiting();
 });
