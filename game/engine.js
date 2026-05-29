@@ -76,6 +76,7 @@ class GameEngine extends EventEmitter {
       state: this.state,
       round: this.round.id,
       crashPoint: this.round.crashPoint,
+      startTime: this.round.startTime,
       nextCrashPoint: this.nextCrashPoint,
       multiplier: this.getMultiplier(),
       activeBets: Object.entries(this.activeBets).map(([phone, b]) => ({

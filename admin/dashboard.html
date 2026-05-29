@@ -672,6 +672,13 @@
           updateDashboard(stats);
           setupSocketListeners();
           toast("Connected to game server ✅");
+
+          // 👇 add this — sync multiplier if game is already flying
+          if (stats.state === "flying" && stats.startTime) {
+            currentState = "flying";
+            setStateBadge("flying");
+            startMultTicker(stats.startTime); // 👈 pass server startTime
+          }
         });
 
         socket.on("admin:error", (data) => {
@@ -730,9 +737,10 @@
         });
       }
 
-      function startMultTicker() {
+      function startMultTicker(serverStartTime = null) {
         stopMultTicker();
-        const localStart = Date.now(); // 👈 use local time only
+        const localStart = serverStartTime || Date.now(); // 👈 use server time if provided
+
         multInterval = setInterval(() => {
           if (currentState !== "flying") return;
           const elapsed = (Date.now() - localStart) / 1000;
