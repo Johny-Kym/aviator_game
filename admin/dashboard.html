@@ -256,6 +256,94 @@
         color: #f5c842;
         display: none;
       }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      .modal-box {
+        background: #0d1526;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 32px 28px;
+        width: 340px;
+        text-align: center;
+        transform: scale(0.95);
+        opacity: 0;
+        transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      }
+      .modal-icon {
+        font-size: 42px;
+        margin-bottom: 14px;
+      }
+      .modal-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: #fff;
+        margin-bottom: 10px;
+      }
+      .modal-message {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        line-height: 1.6;
+        margin-bottom: 24px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .modal-btn {
+        flex: 1;
+        font-family: "Orbitron", sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+      }
+      .modal-btn:hover {
+        transform: translateY(-1px);
+      }
+      .modal-btn-cancel {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .modal-btn-cancel:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+      .modal-btn-red {
+        background: linear-gradient(135deg, #fc4545, #c53030);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(252, 69, 69, 0.3);
+      }
+      .modal-btn-blue {
+        background: linear-gradient(135deg, #4299e1, #2b6cb0);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+      }
+      .modal-mult-display {
+        font-family: "Orbitron", sans-serif;
+        font-size: 42px;
+        font-weight: 900;
+        color: #f5c842;
+        text-shadow: 0 0 20px rgba(245, 200, 66, 0.5);
+        margin-bottom: 10px;
+        letter-spacing: 2px;
+      }
 
       .round-state {
         display: flex;
@@ -866,17 +954,113 @@
       }
 
       function forceCrash() {
-        if (!confirm("Force crash the current round?")) return;
-        socket.emit("admin:force-crash", { adminKey });
-        toast("Force crash sent 💥");
+        showConfirmModal({
+          icon: "💥",
+          title: "FORCE CRASH",
+          message:
+            "This will immediately crash the current round for all players.",
+          confirmText: "FORCE CRASH",
+          confirmClass: "modal-btn-red",
+          onConfirm: () => {
+            socket.emit("admin:force-crash", { adminKey });
+            toast("Force crash sent 💥");
+          },
+        });
       }
 
       function resetRound() {
-        if (!confirm("Reset the current round?")) return;
-        socket.emit("admin:reset", { adminKey });
-        toast("Round reset 🔄");
+        showConfirmModal({
+          icon: "🔄",
+          title: "RESET ROUND",
+          message: "This will reset the current round and start a new one.",
+          confirmText: "RESET ROUND",
+          confirmClass: "modal-btn-blue",
+          onConfirm: () => {
+            socket.emit("admin:reset", { adminKey });
+            toast("Round reset 🔄");
+          },
+        });
+      }
+      function showConfirmModal({
+        icon,
+        title,
+        message,
+        confirmText,
+        confirmClass,
+        onConfirm,
+      }) {
+        const existing = document.getElementById("confirm-modal");
+        if (existing) existing.remove();
+
+        const modal = document.createElement("div");
+        modal.id = "confirm-modal";
+        modal.innerHTML = `
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-box" id="modal-box">
+      <div class="modal-icon">${icon}</div>
+      <div class="modal-title">${title}</div>
+      <div class="modal-mult-display" id="modal-mult-display">${document.getElementById("live-mult")?.textContent || "1.00x"}</div>
+      <div class="modal-message">${message}</div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="modal-cancel">CANCEL</button>
+        <button class="modal-btn ${confirmClass}" id="modal-confirm">${confirmText}</button>
+      </div>
+    </div>
+  </div>
+`;
+        document.body.appendChild(modal);
+        document.body.appendChild(modal);
+
+        // 👇 add this — updates multiplier in real time
+        const multUpdateInterval = setInterval(() => {
+          const multEl = document.getElementById("modal-mult-display");
+          const liveMultEl = document.getElementById("live-mult");
+          if (!multEl || !liveMultEl) {
+            clearInterval(multUpdateInterval); // stop if modal closed
+            return;
+          }
+          const currentMult = liveMultEl.textContent || "1.00x";
+          multEl.textContent = currentMult;
+
+          // update color based on value
+          const val = parseFloat(currentMult);
+          multEl.style.color =
+            val < 2 ? "#68d391" : val < 5 ? "#f5c842" : "#63b3ed";
+        }, 100);
+
+        setTimeout(() => {
+          document.getElementById("modal-box").style.transform = "scale(1)";
+          document.getElementById("modal-box").style.opacity = "1";
+        }, 10);
+
+        document.getElementById("modal-cancel").onclick = closeModal;
+        document.getElementById("modal-backdrop").onclick = (e) => {
+          if (e.target === document.getElementById("modal-backdrop"))
+            closeModal();
+        };
+        document.getElementById("modal-confirm").onclick = () => {
+          closeModal();
+          onConfirm();
+        };
+
+        document.addEventListener("keydown", function handleEscape(e) {
+          if (e.key === "Escape") {
+            closeModal();
+            document.removeEventListener("keydown", handleEscape);
+          }
+        });
       }
 
+      function closeModal() {
+        const modal = document.getElementById("confirm-modal");
+        if (!modal) return;
+        const box = document.getElementById("modal-box");
+        if (box) {
+          box.style.transform = "scale(0.95)";
+          box.style.opacity = "0";
+        }
+        setTimeout(() => modal.remove(), 200);
+      }
       function toast(msg, isErr = false) {
         const container = document.getElementById("toast-container");
         const el = document.createElement("div");
