@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aviator Admin Dashboard</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #0a0e1a;
+        color: #fff;
+        font-family: "Share Tech Mono", monospace;
+        min-height: 100vh;
+      }
+
+      .top-bar {
+        background: rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 14px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-family: "Orbitron", sans-serif;
+        font-weight: 900;
+        font-size: 20px;
+        color: #f5c842;
+        letter-spacing: 3px;
+      }
+
+      .admin-badge {
+        background: rgba(252, 69, 69, 0.15);
+        border: 1px solid rgba(252, 69, 69, 0.4);
+        color: #fc6b6b;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        letter-spacing: 2px;
+      }
+
+      .login-screen {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+      }
+
+      .login-box {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 36px;
+        width: 340px;
+        text-align: center;
+      }
+
+      .login-box h2 {
+        font-family: "Orbitron", sans-serif;
+        color: #f5c842;
+        margin-bottom: 24px;
+        font-size: 18px;
+      }
+
+      .input {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 14px;
+        color: #fff;
+        width: 100%;
+        margin-bottom: 12px;
+      }
+
+      .input:focus {
+        outline: none;
+        border-color: rgba(245, 200, 66, 0.5);
+      }
+
+      .btn {
+        font-family: "Orbitron", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+      }
+
+      .btn-gold {
+        background: linear-gradient(135deg, #f5c842, #e6a817);
+        color: #0a0e1a;
+        width: 100%;
+      }
+
+      .btn-gold:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .btn-red {
+        background: linear-gradient(135deg, #fc4545, #c53030);
+        color: #fff;
+      }
+
+      .btn-red:hover {
+        opacity: 0.9;
+      }
+
+      .btn-blue {
+        background: linear-gradient(135deg, #4299e1, #2b6cb0);
+        color: #fff;
+      }
+
+      .btn-green {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #fff;
+      }
+
+      .btn-gray {
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-gray:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+      }
+
+      .dashboard {
+        display: none;
+        padding: 24px;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 18px;
+      }
+
+      .stat-label {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.35);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .stat-value {
+        font-family: "Orbitron", sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .text-gold {
+        color: #f5c842;
+      }
+      .text-green {
+        color: #68d391;
+      }
+      .text-red {
+        color: #fc6b6b;
+      }
+      .text-blue {
+        color: #63b3ed;
+      }
+      .text-white {
+        color: #fff;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 14px;
+        padding: 20px;
+      }
+
+      .panel-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .crash-control {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .crash-input-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .crash-input {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(245, 200, 66, 0.3);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-family: "Orbitron", sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: #f5c842;
+        width: 140px;
+        text-align: center;
+      }
+
+      .crash-input:focus {
+        outline: none;
+        border-color: #f5c842;
+      }
+
+      .pending-crash {
+        background: rgba(245, 200, 66, 0.08);
+        border: 1px solid rgba(245, 200, 66, 0.2);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: #f5c842;
+        display: none;
+      }
+
+      .round-state {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .state-badge {
+        font-family: "Orbitron", sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 6px;
+        letter-spacing: 1px;
+      }
+
+      .state-waiting {
+        background: rgba(245, 200, 66, 0.15);
+        color: #f5c842;
+        border: 1px solid rgba(245, 200, 66, 0.3);
+      }
+      .state-flying {
+        background: rgba(34, 197, 94, 0.15);
+        color: #68d391;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        animation: blink 1s ease infinite;
+      }
+      .state-crashed {
+        background: rgba(252, 69, 69, 0.15);
+        color: #fc6b6b;
+        border: 1px solid rgba(252, 69, 69, 0.3);
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .live-mult {
+        font-family: "Orbitron", sans-serif;
+        font-size: 36px;
+        font-weight: 900;
+        color: #68d391;
+        text-shadow: 0 0 20px #68d391;
+        margin-bottom: 14px;
+      }
+
+      .action-btns {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      th {
+        text-align: left;
+        padding: 8px 10px;
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      td {
+        padding: 9px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .chip {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .chip-green {
+        background: rgba(104, 211, 145, 0.15);
+        color: #68d391;
+      }
+      .chip-red {
+        background: rgba(252, 69, 69, 0.15);
+        color: #fc6b6b;
+      }
+      .chip-gray {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      .history-list {
+        max-height: 240px;
+        overflow-y: auto;
+      }
+      .bets-list {
+        max-height: 240px;
+        overflow-y: auto;
+      }
+
+      .hist-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .hist-mult {
+        font-family: "Orbitron", sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .mult-low {
+        color: #fc6b6b;
+      }
+      .mult-mid {
+        color: #f5c842;
+      }
+      .mult-high {
+        color: #68d391;
+      }
+      .mult-mega {
+        color: #63b3ed;
+      }
+
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .toast {
+        background: rgba(104, 211, 145, 0.15);
+        border: 1px solid rgba(104, 211, 145, 0.4);
+        color: #68d391;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-family: "Share Tech Mono", monospace;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .toast.err {
+        background: rgba(252, 69, 69, 0.15);
+        border-color: rgba(252, 69, 69, 0.4);
+        color: #fc6b6b;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .mult-ticker {
+        font-family: "Orbitron", sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-bar">
+      <div class="logo">✈ AVIATOR</div>
+      <span class="admin-badge">ADMIN PANEL</span>
+    </div>
+
+    <!-- Login -->
+    <div class="login-screen" id="login-screen">
+      <div class="login-box">
+        <h2>🔐 ADMIN LOGIN</h2>
+        <input
+          class="input"
+          type="password"
+          id="admin-key-input"
+          placeholder="Enter admin key..."
+        />
+        <button class="btn btn-gold" onclick="adminLogin()">LOGIN</button>
+        <div
+          id="login-error"
+          style="
+            color: #fc6b6b;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+          "
+        >
+          Invalid admin key
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+      <!-- Stat Cards -->
+      <div class="grid-4">
+        <div class="stat-card">
+          <div class="stat-label">Game State</div>
+          <div class="stat-value text-gold" id="s-state">WAITING</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Current Round</div>
+          <div class="stat-value text-white" id="s-round">#1</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Pot</div>
+          <div class="stat-value text-green">KES <span id="s-pot">0</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Paid Out</div>
+          <div class="stat-value text-blue">
+            KES <span id="s-paidout">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Round Control -->
+        <div class="panel">
+          <div class="panel-title">⚡ Round Control</div>
+
+          <div class="round-state">
+            <span class="state-badge state-waiting" id="state-badge"
+              >WAITING</span
+            >
+            <span class="mult-ticker" id="live-mult-ticker">1.00x</span>
+          </div>
+
+          <div class="live-mult" id="live-mult">1.00x</div>
+
+          <div class="crash-control">
+            <div class="stat-label">Set Crash Point for Next Round</div>
+            <div class="crash-input-row">
+              <input
+                class="crash-input"
+                type="number"
+                id="crash-input"
+                min="1.00"
+                step="0.01"
+                value="2.00"
+                placeholder="1.00"
+              />
+              <span style="color: rgba(255, 255, 255, 0.3); font-size: 18px"
+                >x</span
+              >
+              <button class="btn btn-gold" onclick="setCrashPoint()">
+                SET
+              </button>
+              <button class="btn btn-gray" onclick="clearCrashPoint()">
+                CLEAR
+              </button>
+            </div>
+            <div class="pending-crash" id="pending-crash">
+              ⚡ Next round will crash at <strong id="pending-val"></strong>x
+            </div>
+
+            <div class="action-btns" style="margin-top: 10px">
+              <button class="btn btn-red" onclick="forceCrash()">
+                💥 FORCE CRASH
+              </button>
+              <button class="btn btn-blue" onclick="resetRound()">
+                🔄 RESET ROUND
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Bets -->
+        <div class="panel">
+          <div class="panel-title">
+            🎰 Active Bets (<span id="bet-count">0</span>)
+          </div>
+          <div class="bets-list">
+            <table>
+              <thead>
+                <tr>
+                  <th>Phone</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Win</th>
+                </tr>
+              </thead>
+              <tbody id="bets-tbody">
+                <tr>
+                  <td
+                    colspan="4"
+                    style="
+                      color: rgba(255, 255, 255, 0.3);
+                      text-align: center;
+                      padding: 20px;
+                    "
+                  >
+                    No bets yet
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Round History -->
+        <div class="panel">
+          <div class="panel-title">📜 Round History</div>
+          <div class="history-list" id="history-list">
+            <div
+              style="
+                color: rgba(255, 255, 255, 0.3);
+                text-align: center;
+                padding: 20px;
+              "
+            >
+              No rounds yet
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="panel">
+          <div class="panel-title">📊 Round Summary</div>
+          <table>
+            <tbody>
+              <tr>
+                <td style="color: rgba(255, 255, 255, 0.4)">Active Players</td>
+                <td class="text-white" id="s-players">0</td>
+              </tr>
+              <tr>
+                <td style="color: rgba(255, 255, 255, 0.4)">Cashed Out</td>
+                <td class="text-green" id="s-cashedout">0</td>
+              </tr>
+              <tr>
+                <td style="color: rgba(255, 255, 255, 0.4)">Crash Point</td>
+                <td class="text-gold" id="s-crashpoint">—</td>
+              </tr>
+              <tr>
+                <td style="color: rgba(255, 255, 255, 0.4)">
+                  Next Crash Point
+                </td>
+                <td class="text-red" id="s-nextcrash">Random</td>
+              </tr>
+              <tr>
+                <td style="color: rgba(255, 255, 255, 0.4)">
+                  House Edge (this round)
+                </td>
+                <td class="text-blue" id="s-house">KES 0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+      let socket;
+      let adminKey = "";
+      let multInterval;
+      let currentState = "waiting";
+      let startTime = null;
+
+      function adminLogin() {
+        const key = document.getElementById("admin-key-input").value.trim();
+        if (!key) return;
+
+        socket = io();
+        socket.emit("admin:join", { adminKey: key });
+
+        socket.on("admin:joined", (stats) => {
+          adminKey = key;
+          document.getElementById("login-screen").style.display = "none";
+          document.getElementById("dashboard").style.display = "block";
+          updateDashboard(stats);
+          setupSocketListeners();
+          toast("Connected to game server ✅");
+        });
+
+        socket.on("admin:error", (data) => {
+          document.getElementById("login-error").style.display = "block";
+          document.getElementById("login-error").textContent = data.error;
+          socket.disconnect();
+        });
+      }
+
+      function setupSocketListeners() {
+        socket.on("stats:update", updateDashboard);
+        socket.on("multiplier:update", ({ multiplier }) => {
+          if (currentState !== "flying") return;
+          const mStr = multiplier.toFixed(2) + "x";
+          document.getElementById("live-mult").textContent = mStr;
+          document.getElementById("live-mult-ticker").textContent = mStr;
+          const col =
+            multiplier < 2 ? "#68d391" : multiplier < 5 ? "#f5c842" : "#63b3ed";
+          document.getElementById("live-mult").style.color = col;
+        });
+
+        socket.on("round:waiting", (data) => {
+          currentState = "waiting";
+          startTime = null;
+          stopMultTicker();
+          setStateBadge("waiting");
+          document.getElementById("live-mult").textContent = "1.00x";
+          document.getElementById("live-mult").style.color = "#f5c842";
+        });
+
+        socket.on("round:start", (data) => {
+          currentState = "flying";
+          startTime = data.startTime;
+          setStateBadge("flying");
+          startMultTicker();
+        });
+
+        socket.on("round:crash", (data) => {
+          currentState = "crashed";
+          startTime = null;
+          stopMultTicker();
+          setStateBadge("crashed");
+          document.getElementById("live-mult").textContent =
+            data.crashPoint.toFixed(2) + "x";
+          document.getElementById("live-mult").style.color = "#fc4545";
+          toast(`💥 Crashed at ${data.crashPoint.toFixed(2)}x`, false);
+        });
+
+        socket.on("admin:crash-set", (data) => {
+          if (data.success) {
+            document.getElementById("pending-crash").style.display = "block";
+            document.getElementById("pending-val").textContent =
+              data.nextCrashPoint.toFixed(2);
+            toast(`Crash point set: ${data.nextCrashPoint.toFixed(2)}x ✅`);
+          }
+        });
+      }
+
+      function startMultTicker() {
+        stopMultTicker();
+        const localStart = Date.now(); // 👈 use local time only
+        multInterval = setInterval(() => {
+          if (currentState !== "flying") return;
+          const elapsed = (Date.now() - localStart) / 1000;
+          const m = Math.pow(Math.E, elapsed * 0.06);
+          const mStr = m.toFixed(2) + "x";
+          document.getElementById("live-mult").textContent = mStr;
+          document.getElementById("live-mult-ticker").textContent = mStr;
+          const col = m < 2 ? "#68d391" : m < 5 ? "#f5c842" : "#63b3ed";
+          document.getElementById("live-mult").style.color = col;
+        }, 100);
+      }
+      function stopMultTicker() {
+        clearInterval(multInterval);
+      }
+
+      function setStateBadge(state) {
+        const badge = document.getElementById("state-badge");
+        badge.className = "state-badge state-" + state;
+        badge.textContent = state.toUpperCase();
+        document.getElementById("s-state").textContent = state.toUpperCase();
+      }
+
+      function updateDashboard(stats) {
+        if (!stats) return;
+
+        document.getElementById("s-round").textContent = "#" + stats.round;
+        document.getElementById("s-pot").textContent =
+          stats.totalPot.toFixed(2);
+        document.getElementById("s-paidout").textContent =
+          stats.totalPaidOut.toFixed(2);
+        document.getElementById("s-players").textContent = stats.totalPlayers;
+        document.getElementById("s-crashpoint").textContent = stats.crashPoint
+          ? stats.crashPoint + "x"
+          : "—";
+        document.getElementById("s-nextcrash").textContent =
+          stats.nextCrashPoint ? stats.nextCrashPoint + "x" : "Random";
+
+        const cashedOutCount = (stats.activeBets || []).filter(
+          (b) => b.cashedOut,
+        ).length;
+        document.getElementById("s-cashedout").textContent = cashedOutCount;
+
+        const house = (stats.totalPot - stats.totalPaidOut).toFixed(2);
+        document.getElementById("s-house").textContent = "KES " + house;
+
+        // Pending crash indicator
+        if (stats.nextCrashPoint) {
+          document.getElementById("pending-crash").style.display = "block";
+          document.getElementById("pending-val").textContent =
+            stats.nextCrashPoint.toFixed(2);
+        } else {
+          document.getElementById("pending-crash").style.display = "none";
+        }
+
+        // Bets table
+        const bets = stats.activeBets || [];
+        document.getElementById("bet-count").textContent = bets.length;
+        const tbody = document.getElementById("bets-tbody");
+        if (bets.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" style="color:rgba(255,255,255,0.3);text-align:center;padding:20px;">No bets this round</td></tr>`;
+        } else {
+          tbody.innerHTML = bets
+            .map(
+              (b) => `
+        <tr>
+          <td>${b.phone}</td>
+          <td class="text-white">KES ${b.amount}</td>
+          <td>${
+            b.cashedOut
+              ? `<span class="chip chip-green">CASHED ${b.cashoutMultiplier}x</span>`
+              : `<span class="chip chip-gray">ACTIVE</span>`
+          }
+          </td>
+          <td>${b.winAmount ? `<span class="text-green">KES ${b.winAmount}</span>` : "—"}</td>
+        </tr>
+      `,
+            )
+            .join("");
+        }
+
+        // History
+        const history = stats.history || [];
+        const histEl = document.getElementById("history-list");
+        if (history.length === 0) {
+          histEl.innerHTML = `<div style="color:rgba(255,255,255,0.3);text-align:center;padding:20px;">No rounds yet</div>`;
+        } else {
+          histEl.innerHTML = history
+            .map((h) => {
+              const cls =
+                h.crashPoint < 2
+                  ? "mult-low"
+                  : h.crashPoint < 5
+                    ? "mult-mid"
+                    : h.crashPoint < 10
+                      ? "mult-high"
+                      : "mult-mega";
+              return `
+          <div class="hist-row">
+            <span style="color:rgba(255,255,255,0.4)">Round #${h.roundId}</span>
+            <span class="hist-mult ${cls}">${h.crashPoint.toFixed(2)}x</span>
+            <span style="color:rgba(255,255,255,0.3)">${h.players} players</span>
+            <span style="color:rgba(255,255,255,0.25);font-size:10px">${new Date(h.timestamp).toLocaleTimeString()}</span>
+          </div>
+        `;
+            })
+            .join("");
+        }
+      }
+
+      function setCrashPoint() {
+        const val = parseFloat(document.getElementById("crash-input").value);
+        if (isNaN(val) || val < 1.0) {
+          toast("Crash point must be ≥ 1.00", true);
+          return;
+        }
+        socket.emit("admin:set-crash", { adminKey, value: val });
+      }
+
+      function clearCrashPoint() {
+        socket.emit("admin:set-crash", { adminKey, value: null });
+        document.getElementById("pending-crash").style.display = "none";
+        toast("Crash point cleared — next round is random");
+      }
+
+      function forceCrash() {
+        if (!confirm("Force crash the current round?")) return;
+        socket.emit("admin:force-crash", { adminKey });
+        toast("Force crash sent 💥");
+      }
+
+      function resetRound() {
+        if (!confirm("Reset the current round?")) return;
+        socket.emit("admin:reset", { adminKey });
+        toast("Round reset 🔄");
+      }
+
+      function toast(msg, isErr = false) {
+        const container = document.getElementById("toast-container");
+        const el = document.createElement("div");
+        el.className = "toast" + (isErr ? " err" : "");
+        el.textContent = msg;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+      }
+
+      // Enter key on login
+      document.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Enter" &&
+          document.getElementById("login-screen").style.display !== "none"
+        ) {
+          adminLogin();
+        }
+      });
+    </script>
+  </body>
+</html>
