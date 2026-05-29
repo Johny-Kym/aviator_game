@@ -21,6 +21,8 @@ const io = new Server(server, {
       "https://aviator-frontend-igpt0a05y-johnykyms-projects.vercel.app/",
     methods: ["GET", "POST"],
   },
+    transports: ["websocket", "polling"], // 👈 add this
+  allowEIO3: true,
 });
 
 // ── Middleware ────────────────────────────────────────────────────────────────
